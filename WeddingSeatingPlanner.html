@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Wedding Seating Finder</title>
+        <style>
+            :root {
+                --bg: #f8f6f2;
+                --card: rgba(255, 255, 255, 0.92);
+                --text: #2f2a26;
+                --muted: #746b63;
+                --border: #e8dfd6;
+                --accent: #9d7b63;
+                --accent-hover: #886853;
+                --shadow: 0 20px 50px rgba(69, 50, 36, 0.12);
+                --radius: 22px;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+                font-family:
+                    Inter,
+                    ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    sans-serif;
+                background:
+                    radial-gradient(circle at top, rgba(157, 123, 99, 0.14), transparent 28%),
+                    linear-gradient(180deg, #fcfbf9 0%, var(--bg) 100%);
+                color: var(--text);
+                display: grid;
+                place-items: center;
+                padding: 24px;
+            }
+
+            .card {
+                width: 100%;
+                max-width: 560px;
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                padding: 36px 28px;
+                backdrop-filter: blur(10px);
+            }
+
+            .eyebrow {
+                margin: 0 0 10px;
+                font-size: 0.82rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            h1 {
+                margin: 0;
+                font-size: clamp(2rem, 5vw, 2.8rem);
+                line-height: 1.08;
+                font-family: Georgia, "Times New Roman", serif;
+                font-weight: 600;
+            }
+
+            .subtext {
+                margin: 14px 0 28px;
+                color: var(--muted);
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+
+            .search-wrap {
+                position: relative;
+            }
+
+            label {
+                display: block;
+                font-size: 0.95rem;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+
+            .input-row {
+                display: flex;
+                gap: 12px;
+                align-items: stretch;
+                flex-wrap: wrap;
+            }
+
+            input {
+                width: 100%;
+                padding: 10px 4px;
+                font-size: 1.2rem;
+
+                border: none; /* remove all borders */
+                border-bottom: 2px solid #d6d0c8; /* only bottom border */
+
+                background: transparent;
+                outline: none;
+
+                text-align: center;
+            }
+
+            input:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 4px rgba(157, 123, 99, 0.14);
+            }
+
+            button {
+                border: none;
+                border-radius: 16px;
+                padding: 16px 22px;
+                font-size: 1rem;
+                font-weight: 600;
+                background: var(--accent);
+                color: white;
+                cursor: pointer;
+                transition:
+                    transform 0.15s ease,
+                    background 0.2s ease,
+                    box-shadow 0.2s ease;
+                box-shadow: 0 10px 25px rgba(157, 123, 99, 0.2);
+            }
+
+            button:hover {
+                background: var(--accent-hover);
+            }
+
+            button:active {
+                transform: translateY(1px);
+            }
+
+            .suggestions {
+                position: absolute;
+                top: calc(100% + 10px);
+                left: 0;
+                right: 0;
+                background: white;
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                box-shadow: 0 16px 34px rgba(57, 38, 24, 0.12);
+                overflow: hidden;
+                display: none;
+                z-index: 20;
+            }
+
+            .suggestions.show {
+                display: block;
+            }
+
+            .suggestion-item {
+                width: 100%;
+                border: none;
+                background: white;
+                color: var(--text);
+                text-align: left;
+                padding: 14px 16px;
+                cursor: pointer;
+                font: inherit;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .suggestion-item:hover,
+            .suggestion-item.active {
+                background: #f8f3ee;
+            }
+
+            .result {
+                margin-top: 24px;
+                min-height: 92px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .result-inner {
+                display: none;
+            }
+
+            .result-inner.show {
+                display: block;
+            }
+
+            .result-label {
+                margin: 0 0 6px;
+                color: var(--muted);
+                font-size: 0.92rem;
+            }
+
+            .result-table {
+                margin: 0;
+                font-size: clamp(1.8rem, 5vw, 2.6rem);
+                font-weight: 700;
+                letter-spacing: -0.03em;
+            }
+
+            .message {
+                margin: 0;
+                color: var(--muted);
+                font-size: 0.98rem;
+                line-height: 1.5;
+            }
+
+            .footer-note {
+                margin-top: 18px;
+                text-align: center;
+                color: var(--muted);
+                font-size: 0.88rem;
+            }
+
+            .page-title {
+                margin: 0;
+                font-size: 2.8rem;
+                font-family: Georgia, serif;
+                letter-spacing: 1px;
+            }
+
+            .top-banner {
+                background: #a63a50;
+                color: white;
+
+                height: 33vh; /* top third of screen */
+                width: 100%;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                text-align: center;
+            }
+
+            body {
+                margin: 0;
+                background: #f7f5f2;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+            }
+
+            .card {
+                max-width: 500px;
+                margin: -80px auto 0;
+                padding: 40px 30px;
+                background: white;
+                border-radius: 14px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            }
+
+            @media (max-width: 640px) {
+                .card {
+                    padding: 28px 20px;
+                }
+
+                .input-row {
+                    flex-direction: column;
+                }
+
+                button {
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header class="top-banner">
+            <h1 class="page-title">Wedding Seating Planner</h1>
+        </header>
+        <main class="card">
+            <div class="search-wrap">
+                <div class="input-row">
+                    <input id="guest-name" type="text" placeholder="Enter your name" autocomplete="off" />
+                </div>
+                <div id="suggestions" class="suggestions" role="listbox" aria-label="Guest suggestions"></div>
+            </div>
+
+            <section class="result" aria-live="polite">
+                <div id="result-default" class="result-inner show"></div>
+
+                <div id="result-found" class="result-inner">
+                    <p class="result-label">You are seated at</p>
+                    <p id="result-table" class="result-table"></p>
+                </div>
+
+                <div id="result-not-found" class="result-inner">
+                    <p class="message">We couldn’t find that name. Please try selecting your name from the suggestions.</p>
+                </div>
+            </section>
+        </main>
+
+        <script>
+            const guests = [
+                { name: "Jack Smith", table: 3 },
+                { name: "Jannete Smith", table: 5 },
+                { name: "Emma Johnson", table: 1 },
+                { name: "Oliver Brown", table: 2 },
+                { name: "Sophia Davis", table: 4 },
+                { name: "Liam Wilson", table: 6 },
+            ];
+
+            const input = document.getElementById("guest-name");
+            const button = document.getElementById("find-btn");
+            const suggestions = document.getElementById("suggestions");
+            const resultDefault = document.getElementById("result-default");
+            const resultFound = document.getElementById("result-found");
+            const resultNotFound = document.getElementById("result-not-found");
+            const resultTable = document.getElementById("result-table");
+
+            let activeIndex = -1;
+            let currentMatches = [];
+
+            function normalize(text) {
+                return text
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .trim();
+            }
+
+            function showState(state, table = "") {
+                resultDefault.classList.remove("show");
+                resultFound.classList.remove("show");
+                resultNotFound.classList.remove("show");
+
+                if (state === "found") {
+                    resultTable.textContent = `Table ${table}`;
+                    resultFound.classList.add("show");
+                } else if (state === "not-found") {
+                    resultNotFound.classList.add("show");
+                } else {
+                    resultDefault.classList.add("show");
+                }
+            }
+
+            function getMatches(value) {
+                const query = normalize(value);
+                if (!query) return [];
+
+                return guests
+                    .filter((guest) => normalize(guest.name).includes(query))
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .slice(0, 6);
+            }
+
+            function closeSuggestions() {
+                suggestions.innerHTML = "";
+                suggestions.classList.remove("show");
+                input.setAttribute("aria-expanded", "false");
+                activeIndex = -1;
+                currentMatches = [];
+            }
+
+            function renderSuggestions(matches) {
+                currentMatches = matches;
+                activeIndex = -1;
+
+                if (!matches.length) {
+                    closeSuggestions();
+                    return;
+                }
+
+                suggestions.innerHTML = "";
+
+                matches.forEach((guest, index) => {
+                    const item = document.createElement("button");
+                    item.type = "button";
+                    item.className = "suggestion-item";
+                    item.setAttribute("role", "option");
+                    item.textContent = guest.name;
+                    item.addEventListener("click", () => {
+                        input.value = guest.name;
+                        closeSuggestions();
+                        findGuest();
+                    });
+                    suggestions.appendChild(item);
+                });
+
+                suggestions.classList.add("show");
+                input.setAttribute("aria-expanded", "true");
+            }
+
+            function updateActiveSuggestion() {
+                const items = suggestions.querySelectorAll(".suggestion-item");
+                items.forEach((item, index) => {
+                    item.classList.toggle("active", index === activeIndex);
+                });
+            }
+
+            function findGuest() {
+                const query = normalize(input.value);
+                if (!query) {
+                    showState("default");
+                    closeSuggestions();
+                    return;
+                }
+
+                const exactMatch = guests.find((guest) => normalize(guest.name) === query);
+
+                if (exactMatch) {
+                    showState("found", exactMatch.table);
+                    closeSuggestions();
+                    return;
+                }
+
+                showState("not-found");
+            }
+
+            input.addEventListener("input", (event) => {
+                const matches = getMatches(event.target.value);
+                renderSuggestions(matches);
+                showState("default");
+            });
+
+            input.addEventListener("keydown", (event) => {
+                const items = suggestions.querySelectorAll(".suggestion-item");
+
+                if (event.key === "ArrowDown" && items.length) {
+                    event.preventDefault();
+                    activeIndex = (activeIndex + 1) % items.length;
+                    updateActiveSuggestion();
+                    return;
+                }
+
+                if (event.key === "ArrowUp" && items.length) {
+                    event.preventDefault();
+                    activeIndex = (activeIndex - 1 + items.length) % items.length;
+                    updateActiveSuggestion();
+                    return;
+                }
+
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (activeIndex >= 0 && currentMatches[activeIndex]) {
+                        input.value = currentMatches[activeIndex].name;
+                    }
+                    findGuest();
+                    return;
+                }
+
+                if (event.key === "Escape") {
+                    closeSuggestions();
+                }
+            });
+
+            button.addEventListener("click", findGuest);
+
+            document.addEventListener("click", (event) => {
+                if (!event.target.closest(".search-wrap")) {
+                    closeSuggestions();
+                }
+            });
+        </script>
+    </body>
+</html>
