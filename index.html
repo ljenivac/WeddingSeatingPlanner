@@ -21,14 +21,6 @@
                 box-sizing: border-box;
             }
 
-            .eyebrow {
-                margin: 0 0 10px;
-                font-size: 0.82rem;
-                letter-spacing: 0.12em;
-                text-transform: uppercase;
-                color: var(--muted);
-            }
-
             h1 {
                 margin: 0;
                 font-size: clamp(2rem, 5vw, 2.8rem);
@@ -47,13 +39,6 @@
             .search-wrap {
                 position: relative;
                 margin-top: 8px;
-            }
-
-            label {
-                display: block;
-                font-size: 0.95rem;
-                font-weight: 600;
-                margin-bottom: 10px;
             }
 
             .input-row {
@@ -82,30 +67,6 @@
 
             input::placeholder {
                 color: #9c938c;
-            }
-
-            button {
-                border: none;
-                border-radius: 16px;
-                padding: 16px 22px;
-                font-size: 1rem;
-                font-weight: 600;
-                background: var(--accent);
-                color: white;
-                cursor: pointer;
-                transition:
-                    transform 0.15s ease,
-                    background 0.2s ease,
-                    box-shadow 0.2s ease;
-                box-shadow: 0 10px 25px rgba(157, 123, 99, 0.2);
-            }
-
-            button:hover {
-                background: var(--accent-hover);
-            }
-
-            button:active {
-                transform: translateY(1px);
             }
 
             .suggestions {
@@ -183,13 +144,6 @@
                 line-height: 1.5;
             }
 
-            .footer-note {
-                margin-top: 18px;
-                text-align: center;
-                color: var(--muted);
-                font-size: 0.88rem;
-            }
-
             .page-title {
                 margin: 0;
                 font-size: clamp(2.4rem, 5vw, 3.4rem);
@@ -265,14 +219,6 @@
                 .card {
                     padding: 28px 20px;
                 }
-
-                .input-row {
-                    flex-direction: column;
-                }
-
-                button {
-                    width: 100%;
-                }
             }
         </style>
     </head>
@@ -280,16 +226,19 @@
         <header class="top-banner">
             <h1 class="page-title">Wedding Seating Planner</h1>
         </header>
+
         <main class="card">
             <div class="search-wrap">
                 <div class="input-row">
-                    <input id="guest-name" type="text" placeholder="Enter your name" autocomplete="off" />
+                    <input id="guest-name" type="text" placeholder="Enter your name" autocomplete="off" aria-expanded="false" />
                 </div>
                 <div id="suggestions" class="suggestions" role="listbox" aria-label="Guest suggestions"></div>
             </div>
 
             <section class="result" aria-live="polite">
-                <div id="result-default" class="result-inner show"></div>
+                <div id="result-default" class="result-inner show">
+                    <p class="message" id="status-message">Loading guest list…</p>
+                </div>
 
                 <div id="result-found" class="result-inner">
                     <p class="result-label">You are seated at</p>
@@ -308,22 +257,31 @@
         </section>
 
         <script>
-            const guests = [
-                { name: "Jack Smith", table: 3 },
-                { name: "Jannete Smith", table: 5 },
-                { name: "Emma Johnson", table: 1 },
-                { name: "Oliver Brown", table: 2 },
-                { name: "Sophia Davis", table: 4 },
-                { name: "Liam Wilson", table: 6 },
-            ];
+            /**
+             * Paste the encrypted output from the generator script here.
+             * Format:
+             * {
+             *   salt: "...base64...",
+             *   iv: "...base64...",
+             *   ciphertext: "...base64..."
+             * }
+             */
+            const ENCRYPTED_GUESTS = {
+                salt: "ay5FWwij2kDo+/cdSV5AYQ==",
+                iv: "qcoY+AAcle7LUnkc",
+                ciphertext:
+                    "EyUUcOkYMPUO3KE3eFmvkzGykOsEgNiaXeGg5jwMIz+syOuu8WwFPB4R3ZnSxQFsSAPS2hAbK6KcnQhWO/onRZCBoY8g2Z0iJ4zmnpswlaB5DgYXeyTPNzvroVPqyAXjgIrYHPDZQyw5FNzBDWlWVnmNeCTadTTp8bgDjn4oKoUOZRWKKHXWMB8TjqypDEFgKgteiBMykSKz6gdbLZulca+Fm5mF8u0sHx/jNECW/3TmeFaUlwpvaqV13KZS4lWonEV0M+OIkShksRfym24l/cb/jHewwWsKQ0s3",
+            };
+
+            let guests = [];
 
             const input = document.getElementById("guest-name");
-            const button = document.getElementById("find-btn");
             const suggestions = document.getElementById("suggestions");
             const resultDefault = document.getElementById("result-default");
             const resultFound = document.getElementById("result-found");
             const resultNotFound = document.getElementById("result-not-found");
             const resultTable = document.getElementById("result-table");
+            const statusMessage = document.getElementById("status-message");
 
             let activeIndex = -1;
             let currentMatches = [];
@@ -336,7 +294,7 @@
                     .trim();
             }
 
-            function showState(state, table = "") {
+            function showState(state, table = "", message = "") {
                 resultDefault.classList.remove("show");
                 resultFound.classList.remove("show");
                 resultNotFound.classList.remove("show");
@@ -347,13 +305,14 @@
                 } else if (state === "not-found") {
                     resultNotFound.classList.add("show");
                 } else {
+                    if (message) statusMessage.textContent = message;
                     resultDefault.classList.add("show");
                 }
             }
 
             function getMatches(value) {
                 const query = normalize(value);
-                if (!query) return [];
+                if (!query || !guests.length) return [];
 
                 return guests
                     .filter((guest) => normalize(guest.name).includes(query))
@@ -408,7 +367,7 @@
             function findGuest() {
                 const query = normalize(input.value);
                 if (!query) {
-                    showState("default");
+                    showState("default", "", "Type your name to find your table.");
                     closeSuggestions();
                     return;
                 }
@@ -424,10 +383,84 @@
                 showState("not-found");
             }
 
+            function base64ToBytes(base64) {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes;
+            }
+
+            async function deriveKey(password, saltBytes) {
+                const encoder = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(password), { name: "PBKDF2" }, false, [
+                    "deriveKey",
+                ]);
+
+                return crypto.subtle.deriveKey(
+                    {
+                        name: "PBKDF2",
+                        salt: saltBytes,
+                        iterations: 250000,
+                        hash: "SHA-256",
+                    },
+                    keyMaterial,
+                    { name: "AES-GCM", length: 256 },
+                    false,
+                    ["decrypt"],
+                );
+            }
+
+            async function decryptGuestsFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const sharedKey = params.get("key");
+
+                if (!sharedKey) {
+                    throw new Error("Missing decryption key in URL.");
+                }
+
+                const saltBytes = base64ToBytes(ENCRYPTED_GUESTS.salt);
+                const ivBytes = base64ToBytes(ENCRYPTED_GUESTS.iv);
+                const cipherBytes = base64ToBytes(ENCRYPTED_GUESTS.ciphertext);
+
+                const aesKey = await deriveKey(sharedKey, saltBytes);
+
+                const decryptedBuffer = await crypto.subtle.decrypt(
+                    {
+                        name: "AES-GCM",
+                        iv: ivBytes,
+                    },
+                    aesKey,
+                    cipherBytes,
+                );
+
+                const decoded = new TextDecoder().decode(decryptedBuffer);
+                const parsed = JSON.parse(decoded);
+
+                if (!Array.isArray(parsed)) {
+                    throw new Error("Decrypted guest list is not a valid array.");
+                }
+
+                return parsed;
+            }
+
+            async function init() {
+                try {
+                    guests = await decryptGuestsFromUrl();
+                    showState("default", "", "Type your name to find your table.");
+                } catch (error) {
+                    console.error(error);
+                    guests = [];
+                    input.disabled = true;
+                    showState("default", "", "This link is missing a valid key, so the seating list could not be loaded.");
+                }
+            }
+
             input.addEventListener("input", (event) => {
                 const matches = getMatches(event.target.value);
                 renderSuggestions(matches);
-                showState("default");
+                showState("default", "", "Type your name to find your table.");
             });
 
             input.addEventListener("keydown", (event) => {
@@ -461,13 +494,13 @@
                 }
             });
 
-            button.addEventListener("click", findGuest);
-
             document.addEventListener("click", (event) => {
                 if (!event.target.closest(".search-wrap")) {
                     closeSuggestions();
                 }
             });
+
+            init();
         </script>
     </body>
 </html>
