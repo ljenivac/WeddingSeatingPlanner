@@ -253,7 +253,7 @@
 
         <section class="floor-plan-section">
             <h2 class="floor-plan-title">Floor Plan</h2>
-            <img src="floor-plan.png" alt="Wedding floor plan showing table locations" class="floor-plan-image" />
+            <img id="floor-plan-image" src="floor-plan.png" alt="Wedding floor plan showing table locations" class="floor-plan-image" />
         </section>
 
         <script>
@@ -282,6 +282,7 @@
             const resultNotFound = document.getElementById("result-not-found");
             const resultTable = document.getElementById("result-table");
             const statusMessage = document.getElementById("status-message");
+            const floorPlanImage = document.getElementById("floor-plan-image");
 
             let activeIndex = -1;
             let currentMatches = [];
@@ -294,6 +295,16 @@
                     .trim();
             }
 
+            function updateFloorPlan(table = null) {
+                if (table) {
+                    floorPlanImage.src = `floor-plan${table}.png`;
+                    floorPlanImage.alt = `Wedding floor plan highlighting table ${table}`;
+                } else {
+                    floorPlanImage.src = "floor-plan.png";
+                    floorPlanImage.alt = "Wedding floor plan showing table locations";
+                }
+            }
+
             function showState(state, table = "", message = "") {
                 resultDefault.classList.remove("show");
                 resultFound.classList.remove("show");
@@ -302,11 +313,14 @@
                 if (state === "found") {
                     resultTable.textContent = `Table ${table}`;
                     resultFound.classList.add("show");
+                    updateFloorPlan(table);
                 } else if (state === "not-found") {
                     resultNotFound.classList.add("show");
+                    updateFloorPlan();
                 } else {
                     if (message) statusMessage.textContent = message;
                     resultDefault.classList.add("show");
+                    updateFloorPlan();
                 }
             }
 
